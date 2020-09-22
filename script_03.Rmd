@@ -40,6 +40,8 @@ sep_old <-
          title = course_title,
          name = course_name,
          department = course_department) %>% 
+  group_by(id, title, name, department) %>%
+  summarize(u_grad = sum(u_grad), .groups = "drop") %>%
   filter(u_grad > 10)
 
 # But this is not correct! Look for Gov 50: Data. What do you see? What can you
@@ -53,6 +55,22 @@ sep_old <-
 
 **Prompt:** Read in and clean the new data, creating an object called `sep_new`. 
 
+```{r}
+sep_new <- read_excel("new_data/class_enrollment_summary_by_term_9-21-2020.xlsx", 
+             skip = 3) %>%
+  clean_names() %>% 
+  filter(! is.na(course_title)) %>% 
+  select(-grad, -non_degree, -x_reg, -vus, -employee, 
+         -withdraw, -total, -instructor_full_name, -course_section_code) %>%
+  rename(id = course_id,
+         title = course_title,
+         name = course_name,
+         department = course_department) %>% 
+  group_by(id, title, name, department) %>%
+  summarize(u_grad = sum(u_grad), .groups = "drop") %>%
+  filter(u_grad > 10)
+
+```
 
 
 ### Scene 2
@@ -60,17 +78,26 @@ sep_old <-
 **Prompt:** Dean Amanda Claybaugh is concerned about the drop in undergradaute enrollment in some courses between September 1 and today. She wants you to analyze this issue. Before you dive into the details, provide some bullet points as to how Wisdom and Temperance apply to this situation. Every student should have several bullet points. Someone will be asked to share their screen and discuss.
 
 Before we start on the model, Wisdom suggests we should:
+- acknowledge we can not observe outcomes for every undergraduate;
+- take samples that represent populations we may be interested in
+- ask why is someone interested in drop in undergraduate enrollment
 
 
 After we have a model, Temperance suggests we should:
-
+- acknowledge there are small variables that affect circumstances that are unknowable
+- acknowledge students within the sample may not be entirely representative of the student body as a whole
 
 
 ### Scene 3
 
 **Prompt:** Which classes had the biggest increases and decreases in undergraduate enrollments between September 1 and today? Make a graphic that shows the 5 biggest increases and decreases. Make it look nice.
 
-
+```{r}
+left_join(sep_old, sep_new, by = "id", suffix = c("_new", "_old")) %>%
+  select(- title_old, -name_old, -department_old)
+  mutate(change = u_grad_new - u_grad_old) %>%
+  arrange(change)
+```
 
 
 
